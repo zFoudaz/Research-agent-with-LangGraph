@@ -1,2 +1,5 @@
 langgraph
 dotenv
+tavily
+langchain-openai
+pydantic
