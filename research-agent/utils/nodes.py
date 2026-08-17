@@ -1,13 +1,13 @@
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage,HumanMessage,SystemMessage
 from langgraph.prebuilt import ToolNode
-from tools import search
+from .tools import search
 from dotenv import load_dotenv
 load_dotenv()
 import os
-from state import ResearchAgentState
-from schemas import reviewerSchema
-from prompts import PLANNER_SYSTEM_PROMPT, WRITER_SYSTEM_PROMPT, REVIEWER_SYSTEM_PROMPT, WRITER_IMPROVE_SYSTEM_PROMPT
+from .state import ResearchAgentState
+from .schemas import reviewerSchema
+from .prompts import PLANNER_SYSTEM_PROMPT, WRITER_SYSTEM_PROMPT, REVIEWER_SYSTEM_PROMPT, WRITER_IMPROVE_SYSTEM_PROMPT
 
 llm = AzureChatOpenAI(
     api_key= os.environ['OPENAI_KEY'],
@@ -42,16 +42,17 @@ def writer(state:ResearchAgentState) -> ResearchAgentState:
         state['writer_messages'].append(SystemMessage(content = WRITER_SYSTEM_PROMPT + llm_input))
     msg = writer_llm.invoke(state['writer_messages'])
     return {
+        'need_improve':state['need_improve'],
         'draft':msg.content,
         'writer_messages':[msg]
     }
 # conditional edge function
-def is_tool_called(state:ResearchAgentState) -> bool :
+def is_tool_called(state:ResearchAgentState) -> str :
     last_message = state['writer_messages'][-1]
     if not last_message.tool_call:
-        return False
+        return 'Finished'
     else:
-        return True
+        return "toolCalled"
 
 # ================= Reviewer Node =================
 
@@ -63,6 +64,6 @@ def reviewer(state:ResearchAgentState) -> ResearchAgentState:
 # conditional edge function
 def needs_improve(state:ResearchAgentState) -> bool:
     if state['need_improve']:
-        return True
+        return 'NeedsImprove'
     else:
-        return False
+        return 'Good'

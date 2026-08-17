@@ -20,5 +20,3 @@ def search(query:str) -> List[str]:
     response = tavily_client.search(query,max_results=2)
 
     return response['results']
-
-search("who is leo messi?")
