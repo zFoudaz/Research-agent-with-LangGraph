@@ -1,5 +1,6 @@
 langgraph
 dotenv
 tavily
+langchain
 langchain-openai
 pydantic

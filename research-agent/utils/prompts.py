@@ -7,13 +7,15 @@ you will be given a user query and you will create a plan from it
 WRITER_SYSTEM_PROMPT = """\
 You are a research writer. your task is to take a plan about a specific subject and your goal is to follow \
 this plan and write a professional resarch that will be reviewed if it needs any improvements.
-You have tools use them when needed.
+You have tools use them when needed. Only return the research don't add any useless text like (here is a research ... , \
+tell me if you need any improvement ..., etc)
 """
 
 WRITER_IMPROVE_SYSTEM_PROMPT = """\
 You are a research writer. you wrote the following research before and got reviewed and it needs improvement.
 you are given the research you wrote before and notes from the reviewer. Your task is to rewrite the research and follow \
-the notes given. you also have tools use them when needed.
+the notes given. you also have tools use them when needed. Only return the research don't add any useless text like (here is a research ... , \
+tell me if you need any improvement ..., etc)
 """
 
 REVIEWER_SYSTEM_PROMPT = """\

@@ -1,6 +1,6 @@
 from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage,HumanMessage,SystemMessage
-from langgraph.prebuilt import ToolNode
+from langchain.agents import create_agent
 from .tools import search
 from dotenv import load_dotenv
 load_dotenv()
@@ -20,39 +20,35 @@ def planner(state:ResearchAgentState) -> ResearchAgentState:
     user_input = state['user_input']
     response = llm.invoke([SystemMessage(content=PLANNER_SYSTEM_PROMPT)] + [user_input])
     return {
-        'plan':response.content
+        'plan':response.content,
+        'current_tries':0
     }
 
 # ================= Writer Node and Tools =================
 #tool node
 writer_tools = [search]
-writer_tools_node = ToolNode(writer_tools, messages_key='writer_messages')
+writer_agent = create_agent(llm,tools=writer_tools)
 #node
 def writer(state:ResearchAgentState) -> ResearchAgentState:
-    writer_llm = llm.bind_tools(writer_tools)
-    if state['need_improve']:
-        state['need_improve']=False
-        state['writer_messages'] = None
-        llm_input = f"research to improve: \n {state['draft']}\n\n notes to follow: {state['notes']}"
-        state['writer_messages'].append(SystemMessage(content = WRITER_IMPROVE_SYSTEM_PROMPT + llm_input))
-    if not state['writer_messages']:
+    if state.get('need_improve'):
+        llm_input = f"research to improve: \n{state['draft']}\n\n notes to follow: {state['notes']}"
+        system_prompt = WRITER_IMPROVE_SYSTEM_PROMPT + llm_input
+    else:
         topic = state['user_input'].content
         plan = state['plan']
-        llm_input = f"topic: {topic}\n the plan to follow:\n {plan}"
-        state['writer_messages'].append(SystemMessage(content = WRITER_SYSTEM_PROMPT + llm_input))
-    msg = writer_llm.invoke(state['writer_messages'])
-    return {
-        'need_improve':state['need_improve'],
-        'draft':msg.content,
-        'writer_messages':[msg]
+        llm_input = f"topic: {topic}\nthe plan to follow:\n{plan}"
+        system_prompt = WRITER_SYSTEM_PROMPT + llm_input
+    result = writer_agent.invoke({
+        'messages':[SystemMessage(content=system_prompt)]
+    })
+    final_msg = result['messages'][-1]
+
+    return{
+        'need_improve':False,
+        'draft':final_msg.content,
+        'current_tries':state['current_tries']+1
     }
-# conditional edge function
-def is_tool_called(state:ResearchAgentState) -> str :
-    last_message = state['writer_messages'][-1]
-    if not last_message.tool_call:
-        return 'Finished'
-    else:
-        return "toolCalled"
+
 
 # ================= Reviewer Node =================
 
@@ -63,7 +59,7 @@ def reviewer(state:ResearchAgentState) -> ResearchAgentState:
     return review
 # conditional edge function
 def needs_improve(state:ResearchAgentState) -> bool:
-    if state['need_improve']:
+    if state['need_improve'] and state['current_tries'] < state['max_tries']:
         return 'NeedsImprove'
     else:
         return 'Good'
