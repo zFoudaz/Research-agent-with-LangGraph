@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import HumanMessage
 from utils.state import ResearchAgentState
@@ -18,7 +20,7 @@ builder.add_conditional_edges('reviewer',needs_improve,{'NeedsImprove':'writer',
 research_agent = builder.compile()
 
 doc = research_agent.invoke({
-    'user_input':HumanMessage(content='what is MCP or Model context protocol?'),
+    'user_input':HumanMessage(content='tell me about the history of Egypt'),
     'need_improve':False,
     'max_tries':3
 })

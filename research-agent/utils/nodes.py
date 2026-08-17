@@ -2,8 +2,6 @@ from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import BaseMessage,HumanMessage,SystemMessage
 from langchain.agents import create_agent
 from .tools import search
-from dotenv import load_dotenv
-load_dotenv()
 import os
 from .state import ResearchAgentState
 from .schemas import reviewerSchema
