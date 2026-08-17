@@ -9,4 +9,5 @@ class ResearchAgentState(TypedDict):
     draft : str | None = None
     need_improve:bool = False
     notes: str | None = None
+    current_tries:int = 0
     max_tries : int = 2
